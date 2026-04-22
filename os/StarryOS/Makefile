@@ -12,7 +12,7 @@ export MEM := 1G
 export ICOUNT := n
 
 # Generated Options
-export A := $(PWD)
+export A := $(PWD)/starryos
 export NO_AXSTD := y
 export AX_LIB := ax-feat
 export APP_FEATURES := qemu
@@ -32,7 +32,7 @@ rootfs:
 		curl -f -L $(ROOTFS_URL)/$(ROOTFS_IMG).xz -O; \
 		xz -d $(ROOTFS_IMG).xz; \
 	fi
-	@cp $(ROOTFS_IMG) make/disk.img
+	@cp $(ROOTFS_IMG) make/disk-$(ARCH).img
 
 img:
 	@echo -e "\033[33mWARN: The 'img' target is deprecated. Please use 'rootfs' instead.\033[0m"

@@ -70,7 +70,7 @@ ACCEL ?=
 ICOUNT ?= n
 QEMU_ARGS ?=
 
-DISK_IMG ?= disk.img
+DISK_IMG ?= disk-$(ARCH).img
 QEMU_LOG ?= n
 NET_DUMP ?= n
 NET_DEV ?= user
@@ -86,7 +86,7 @@ ifeq ($(wildcard $(APP)),)
   $(error Application path "$(APP)" is not valid)
 endif
 
-ifneq ($(wildcard $(APP)/Cargo.toml),)
+ifneq ($(wildcard $(APP)/Cargo.toml $(APP)/starryos),)
   APP_TYPE := rust
   AX_LIB ?= ax-std
 else
@@ -198,9 +198,9 @@ else
 	$(call make_disk_image,fat32,$(DISK_IMG))
 endif
 
-clean: clean_c
+clean:
 	rm -rf $(APP)/*.bin $(APP)/*.elf $(OUT_CONFIG)
-	cargo clean
+	cargo clean --target-dir $(TARGET_DIR)
 
 .PHONY: all defconfig oldconfig \
 	build disasm run justrun debug \
