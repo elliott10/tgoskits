@@ -1,7 +1,7 @@
-use axplat::console::ConsoleIf;
+use ax_plat::console::ConsoleIf;
 use dw_uart_rs::DW8250;
-use kspin::SpinNoIrq;
-use lazyinit::LazyInit;
+use ax_kspin::SpinNoIrq;
+use ax_lazyinit::LazyInit;
 
 use crate::config::{devices::UART_PADDR, plat::PHYS_VIRT_OFFSET};
 

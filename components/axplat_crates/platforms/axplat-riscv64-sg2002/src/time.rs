@@ -1,6 +1,6 @@
 use riscv::register::time;
 
-use axplat::time::{NANOS_PER_SEC, TimeIf};
+use ax_plat::time::{NANOS_PER_SEC, TimeIf};
 
 const NANOS_PER_TICK: u64 = NANOS_PER_SEC / crate::config::devices::TIMER_FREQUENCY as u64;
 /// RTC wall time offset in nanoseconds at monotonic time base.
@@ -12,7 +12,7 @@ pub(super) fn init_early() {
 
     #[cfg(feature = "rtc")]
     if RTC_PADDR != 0 {
-    use axplat::mem::{pa, phys_to_virt};
+    use ax_plat::mem::{pa, phys_to_virt};
 
         // Get the current time in seconds since the epoch (1970-01-01) from the SG2002 RTC.
         // Subtract the timer ticks to get the actual time when ArceOS was booted.

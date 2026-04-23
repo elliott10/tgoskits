@@ -1,5 +1,5 @@
 use crate::config::plat::{BOOT_STACK_SIZE, PHYS_VIRT_OFFSET};
-use axplat::mem::{Aligned4K, pa};
+use ax_plat::mem::{Aligned4K, pa};
 
 #[unsafe(link_section = ".bss.stack")]
 static mut BOOT_STACK: [u8; BOOT_STACK_SIZE] = [0; BOOT_STACK_SIZE];
@@ -36,8 +36,8 @@ unsafe fn init_boot_page_table() {
 
 unsafe fn init_mmu() {
     unsafe {
-        axcpu::asm::write_kernel_page_table(pa!(&raw const BOOT_PT_SV39 as usize));
-        axcpu::asm::flush_tlb(None);
+        ax_cpu::asm::write_kernel_page_table(pa!(&raw const BOOT_PT_SV39 as usize));
+        ax_cpu::asm::flush_tlb(None);
     }
 }
 
@@ -81,7 +81,7 @@ unsafe extern "C" fn _start() -> ! {
         boot_stack = sym BOOT_STACK,
         init_boot_page_table = sym init_boot_page_table,
         init_mmu = sym init_mmu,
-        entry = sym axplat::call_main,
+        entry = sym ax_plat::call_main,
     )
 }
 
@@ -108,6 +108,6 @@ pub(crate) unsafe extern "C" fn _start_secondary() -> ! {
         j       .",
         phys_virt_offset = const PHYS_VIRT_OFFSET,
         init_mmu = sym init_mmu,
-        entry = sym axplat::call_secondary_main,
+        entry = sym ax_plat::call_secondary_main,
     )
 }

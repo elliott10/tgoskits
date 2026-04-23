@@ -12,6 +12,7 @@ members = [
     "platforms/axplat-aarch64-raspi",
     "platforms/axplat-aarch64-bsta1000b",
     "platforms/axplat-aarch64-phytium-pi",
+    "platforms/axplat-riscv64-sg2002",
     "platforms/axplat-riscv64-qemu-virt",
     "platforms/axplat-loongarch64-qemu-virt",
 
@@ -28,6 +29,7 @@ default-members = [
     "platforms/axplat-aarch64-raspi",
     "platforms/axplat-aarch64-bsta1000b",
     "platforms/axplat-aarch64-phytium-pi",
+    "platforms/axplat-riscv64-sg2002",
     "platforms/axplat-riscv64-qemu-virt",
     "platforms/axplat-loongarch64-qemu-virt",
 ]
