@@ -136,17 +136,16 @@ impl Rv64PTE {
 
 impl GenericPTE for Rv64PTE {
     fn new_page(paddr: PhysAddr, mflags: MappingFlags, _is_huge: bool) -> Self {
-        let mut page = Self(
-            PTEFlags::from(mflags).bits() as u64
-                | ((paddr.as_usize() >> 2) as u64 & Self::PHYS_ADDR_MASK),
-        );
+        let mut page = Self((paddr.as_usize() >> 2) as u64 & Self::PHYS_ADDR_MASK);
         page.set_flags(mflags, _is_huge);
         page
     }
 
     fn new_table(paddr: PhysAddr) -> Self {
+        let mut table = Self::new_page(paddr, MappingFlags::empty(), false);
         // Default table flags: PTEFlags::V
-        Self::new_page(paddr, MappingFlags::READ | MappingFlags::WRITE, false)
+        table.0 = (table.0 & !0x3ff) | PTEFlags::V.bits() as u64;
+        table
     }
 
     fn paddr(&self) -> PhysAddr {
@@ -163,11 +162,10 @@ impl GenericPTE for Rv64PTE {
     }
 
     fn set_flags(&mut self, mflags: MappingFlags, _is_huge: bool) {
-        let mut flags = PTEFlags::from(mflags) | PTEFlags::A | PTEFlags::D;
-        flags |= self.set_extended_flags(mflags, 0);
-
+        let flags = PTEFlags::from(mflags) | PTEFlags::A | PTEFlags::D;
         debug_assert!(flags.intersects(PTEFlags::R | PTEFlags::X));
         self.0 = (self.0 & Self::PHYS_ADDR_MASK) | flags.bits() as u64;
+        self.set_extended_flags(mflags, 0);
     }
 
     fn bits(self) -> usize {
