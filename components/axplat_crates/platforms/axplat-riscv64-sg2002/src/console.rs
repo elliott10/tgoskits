@@ -1,7 +1,7 @@
-use ax_plat::console::ConsoleIf;
-use dw_uart_rs::DW8250;
 use ax_kspin::SpinNoIrq;
 use ax_lazyinit::LazyInit;
+use ax_plat::console::ConsoleIf;
+use dw_uart_rs::DW8250;
 
 use crate::config::{devices::UART_PADDR, plat::PHYS_VIRT_OFFSET};
 
@@ -50,7 +50,7 @@ impl ConsoleIf for ConsoleIfImpl {
     /// Returns the IRQ number for the console, if applicable.
     #[cfg(feature = "irq")]
     fn irq_num() -> Option<usize> {
-        //Some(crate::config::devices::UART_IRQ)
+        // Some(crate::config::devices::UART_IRQ)
         None
     }
 }

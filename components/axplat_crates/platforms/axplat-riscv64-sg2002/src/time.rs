@@ -1,6 +1,5 @@
-use riscv::register::time;
-
 use ax_plat::time::{NANOS_PER_SEC, TimeIf};
+use riscv::register::time;
 
 const NANOS_PER_TICK: u64 = NANOS_PER_SEC / crate::config::devices::TIMER_FREQUENCY as u64;
 /// RTC wall time offset in nanoseconds at monotonic time base.
@@ -12,7 +11,7 @@ pub(super) fn init_early() {
 
     #[cfg(feature = "rtc")]
     if RTC_PADDR != 0 {
-    use ax_plat::mem::{pa, phys_to_virt};
+        use ax_plat::mem::{pa, phys_to_virt};
 
         // Get the current time in seconds since the epoch (1970-01-01) from the SG2002 RTC.
         // Subtract the timer ticks to get the actual time when ArceOS was booted.
@@ -26,7 +25,6 @@ pub(super) fn init_early() {
     }
 }
 
-
 #[cfg(feature = "rtc")]
 fn read_sg2002_rtc_seconds(base_vaddr: usize) -> u64 {
     const CVI_RTC_SEC_CNTR_VALUE: usize = 0x18;
@@ -34,11 +32,9 @@ fn read_sg2002_rtc_seconds(base_vaddr: usize) -> u64 {
     const VALID_TIME_THRESHOLD: u32 = 0x3000_0000;
 
     let rtc_base = base_vaddr as *const u8;
-    let sec = unsafe {
-        core::ptr::read_volatile(rtc_base.add(CVI_RTC_SEC_CNTR_VALUE) as *const u32)
-    };
-    let sec_ro_t =
-        unsafe { core::ptr::read_volatile(rtc_base.add(RTC_MACRO_RO_T) as *const u32) };
+    let sec =
+        unsafe { core::ptr::read_volatile(rtc_base.add(CVI_RTC_SEC_CNTR_VALUE) as *const u32) };
+    let sec_ro_t = unsafe { core::ptr::read_volatile(rtc_base.add(RTC_MACRO_RO_T) as *const u32) };
 
     let sec = if sec_ro_t > VALID_TIME_THRESHOLD {
         sec_ro_t

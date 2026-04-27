@@ -184,6 +184,22 @@ jobs:
             container_image: ghcr.io/${{ github.repository }}-container-axvisor-lvz:latest
             required_repository_owner: ""
             main_pr_only: false
+          - name: Build starry riscv64 (make)
+            use_container: true
+            runs_on: '["ubuntu-latest"]'
+            command: cd os/StarryOS && make ARCH=riscv64 build
+            cache_key: build-starry-make-riscv64
+            container_image: ghcr.io/${{ github.repository }}-container:latest
+            required_repository_owner: ""
+            main_pr_only: false
+          - name: Build starry aarch64 (make)
+            use_container: true
+            runs_on: '["ubuntu-latest"]'
+            command: cd os/StarryOS && make ARCH=aarch64 build
+            cache_key: build-starry-make-aarch64
+            container_image: ghcr.io/${{ github.repository }}-container:latest
+            required_repository_owner: ""
+            main_pr_only: false
           - name: Test starry riscv64 qemu
             use_container: true
             runs_on: '["ubuntu-latest"]'
@@ -213,6 +229,22 @@ jobs:
             runs_on: '["ubuntu-latest"]'
             command: cargo xtask starry test qemu --arch x86_64
             cache_key: test-starry-x86_64
+            container_image: ghcr.io/${{ github.repository }}-container:latest
+            required_repository_owner: ""
+            main_pr_only: false
+          - name: Build arceos riscv64 (make)
+            use_container: true
+            runs_on: '["ubuntu-latest"]'
+            command: cd os/arceos && make ARCH=riscv64 build
+            cache_key: build-arceos-make-riscv64
+            container_image: ghcr.io/${{ github.repository }}-container:latest
+            required_repository_owner: ""
+            main_pr_only: false
+          - name: Build arceos aarch64 (make)
+            use_container: true
+            runs_on: '["ubuntu-latest"]'
+            command: cd os/arceos && make ARCH=aarch64 build
+            cache_key: build-arceos-make-aarch64
             container_image: ghcr.io/${{ github.repository }}-container:latest
             required_repository_owner: ""
             main_pr_only: false
