@@ -9,6 +9,12 @@ use axvm_types::{VmArchPerCpuOps, VmArchVcpuOps, VmVcpuState};
 use super::{BoundVcpuExit, VcpuRunAction};
 use crate::{AxVmResult, ax_err, irq::model::PendingVcpuInterrupt};
 
+/// Maximum wall-clock time a vCPU may run continuously before yielding to the
+/// host scheduler. Bounding each run slice lets more vCPUs than physical CPUs
+/// time-share one host CPU without one continuously runnable guest starving
+/// the others.
+const VCPU_TIME_SLICE_NANOS: u64 = 10_000_000; // 10ms
+
 pub(crate) trait ArchOps {
     type VCpu: VmArchVcpuOps;
     type PerCpu: VmArchPerCpuOps;
@@ -164,6 +170,13 @@ pub(crate) trait ArchOps {
         }
 
         let run_result = vcpu.with_current_cpu_set(|| -> AxVmResult<_> {
+
+            // Bound this vCPU's continuous run time so that multiple vCPUs can
+            // time-share one physical CPU. Arming the slice registers a
+            // host-timer deadline that forces a running guest to VM-exit once
+            // the slice elapses.
+            let time_slice = crate::timer::VcpuTimeSlice::arm(VCPU_TIME_SLICE_NANOS);
+
             loop {
                 crate::runtime::vcpus::inject_pending_interrupts::<Self>(vm.id(), vcpu_id, vcpu);
 
@@ -175,7 +188,20 @@ pub(crate) trait ArchOps {
                 let exit = exit?;
                 trace!("{exit:#x?}");
                 match Self::handle_vcpu_exit_bound(vm, vcpu, exit)? {
-                    BoundVcpuExit::Continue => continue,
+                    BoundVcpuExit::Continue => {
+                        if time_slice.expired() {
+                            debug!(
+                                "VM[{vm_id}] VCpu[{vcpu_id}] time slice expired, yielding to host"
+                                );
+                            break Ok(BoundVcpuExit::Complete(VcpuRunAction {
+                                waits_for_event: false,
+                                stop_reason: None,
+                                resets_vm: false,
+                                exits_vcpu: false,
+                            }));
+                        }
+                        continue;
+                    }
                     action => break Ok(action),
                 }
             }

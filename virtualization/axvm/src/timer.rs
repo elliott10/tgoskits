@@ -276,8 +276,56 @@ pub(crate) fn check_events() {
     }
 }
 
+/// An armed time-slice guard that bounds how long one vCPU may run
+/// continuously before yielding to the host scheduler.
+///
+/// Overcommit pins more vCPUs than there are physical CPUs, so a single
+/// continuously runnable guest must not starve the other vCPUs sharing its
+/// physical CPU. Arming a slice registers a one-shot host-timer deadline that
+/// forces a running guest to VM-exit when the slice elapses. The
+/// [`VcpuTimeSlice::expired`] check additionally catches the case where the
+/// deadline expired while the vCPU was already handling an exit in host
+/// context, which re-enters the guest without a fresh VM-exit.
+pub(crate) struct VcpuTimeSlice {
+    deadline_ns: u64,
+    token: usize,
+}
+
+impl VcpuTimeSlice {
+    /// Arms a new time slice of `slice_ns` nanoseconds on the current CPU.
+    pub(crate) fn arm(slice_ns: u64) -> Self {
+        let now_ns = current_host_time().as_nanos().min(u64::MAX as u128) as u64;
+        let deadline_ns = now_ns.saturating_add(slice_ns);
+        // The callback is intentionally a no-op: the timer's only job is to
+        // force a VM-exit, which the vCPU run loop turns into a yield.
+        let token = register_timer(
+            deadline_ns,
+            Box::new(|_| {
+                trace!("vCPU time slice expired");
+            }),
+            );
+        Self { deadline_ns, token }
+    }
+
+    /// Returns whether the armed time slice has elapsed.
+    pub(crate) fn expired(&self) -> bool {
+        let now_ns = current_host_time().as_nanos().min(u64::MAX as u128) as u64;
+        now_ns >= self.deadline_ns
+    }
+}
+
+impl Drop for VcpuTimeSlice {
+    fn drop(&mut self) {
+        // Cancelling on drop removes a not-yet-expired deadline so an early
+        // exit (for example WFI) does not leave a stale timer that would
+        // prematurely interrupt a later vCPU on the same physical CPU.
+        cancel_timer(self.token);
+    }
+}
+
+/// Returns the current host monotonic time as a timer-wheel `TimeValue`.
 #[cfg(not(test))]
-fn current_host_time() -> TimeValue {
+pub(crate) fn current_host_time() -> TimeValue {
     default_host().monotonic_time()
 }
 
