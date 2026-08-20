@@ -7,10 +7,11 @@ use alloc::{
 };
 
 use anyhow::{Result, bail};
+use ax_std::os::arceos::sync::{IrqSafeMutex, IrqSafeMutexGuard};
 use axvm::{SerialBackend, SerialBackendFactory, VMId, VmStatus};
 use core::ops::Bound::{Excluded, Unbounded};
 use log::warn;
-use std::sync::{LazyLock, Mutex, MutexGuard};
+use std::sync::LazyLock;
 
 use super::host::write_host_bytes;
 
@@ -59,11 +60,17 @@ pub struct GuestConsoleMux {
 
 #[derive(Debug)]
 struct ConsoleCore {
-    state: Mutex<ConsoleState>,
+    state: IrqSafeMutex<ConsoleState>,
     /// Serializes host writes with backend replacement and invalidation.
     ///
     /// Code that needs both locks must acquire `output_lock` before `state`.
-    output_lock: Mutex<()>,
+    ///
+    /// Both locks must stay non-sleeping: guest serial output reaches
+    /// `write_guest_output` from the vCPU run loop's VM-exit closure, where
+    /// blocking would leave the per-CPU `CURRENT_VCPU` publication set while
+    /// the vCPU task is descheduled (observed as "nested vCPU operation"
+    /// panics with over-subscribed vCPUs).
+    output_lock: IrqSafeMutex<()>,
 }
 
 #[derive(Debug, Default)]
@@ -103,8 +110,8 @@ impl GuestConsoleMux {
     fn new() -> Self {
         Self {
             core: Arc::new(ConsoleCore {
-                state: Mutex::new(ConsoleState::default()),
-                output_lock: Mutex::new(()),
+                state: IrqSafeMutex::new(ConsoleState::default()),
+                output_lock: IrqSafeMutex::new(()),
             }),
         }
     }
@@ -339,16 +346,12 @@ fn switch_guest(state: &mut ConsoleState, direction: GuestSwitchDirection) -> Ro
 }
 
 impl ConsoleCore {
-    fn lock_state(&self) -> MutexGuard<'_, ConsoleState> {
-        self.state
-            .lock()
-            .expect("guest console state mutex poisoned")
+    fn lock_state(&self) -> IrqSafeMutexGuard<'_, ConsoleState> {
+        self.state.lock()
     }
 
-    fn lock_output(&self) -> MutexGuard<'_, ()> {
-        self.output_lock
-            .lock()
-            .expect("guest console output mutex poisoned")
+    fn lock_output(&self) -> IrqSafeMutexGuard<'_, ()> {
+        self.output_lock.lock()
     }
 
     fn create_serial_backend(self: &Arc<Self>, vm_id: VMId) -> Arc<GuestSerialBackend> {
