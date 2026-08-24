@@ -486,7 +486,8 @@ pub fn set_phys_cpu_sets(
                 return Err(ax_err_type!(
                     InvalidInput,
                     format!(
-                        "phys_cpu_sets mask 0x{mask:x} is not within the {host_cpu_count} host CPUs"
+                        "phys_cpu_sets mask 0x{mask:x} is not within the {host_cpu_count} host \
+                         CPUs"
                     )
                 ));
             }

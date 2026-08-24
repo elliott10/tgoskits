@@ -313,7 +313,7 @@ impl<A: VmArchVcpuOps> AxVCpu<A> {
         // With IRQs disabled, any accidental sleep in `f` panics loudly in
         // `might_sleep` instead of corrupting the publication invariant.
         let _guard = PreemptIrqSaveGuard::new();
-        //let _guard = PreemptGuard::new();
+        // let _guard = PreemptGuard::new();
 
         // SAFETY: the guard prevents migration through the backend operation,
         // guest run, restoration check, and publication withdrawal.
@@ -331,17 +331,13 @@ impl<A: VmArchVcpuOps> AxVCpu<A> {
                         let panicking_task = crate::host::task::current_task().id_name();
                         let current_vcpu_task =
                             crate::get_vm_by_id(current_vcpu.vm_id()).and_then(|vm| {
-                                vm.with_runtime(|runtime| {
-                                    Ok(runtime.vcpu_task(current_vcpu.id()))
-                                })
-                                .ok()
-                                .flatten()
+                                vm.with_runtime(|runtime| Ok(runtime.vcpu_task(current_vcpu.id())))
+                                    .ok()
+                                    .flatten()
                             });
                         let current_vcpu_task_info = current_vcpu_task
                             .as_ref()
-                            .map(|task| {
-                                format!("{} (state = {:?})", task.id_name(), task.state())
-                            })
+                            .map(|task| format!("{} (state = {:?})", task.id_name(), task.state()))
                             .unwrap_or_else(|| "unknown".into());
                         panic!(
                             "nested vCPU operation is not allowed (at {}): current = VM[{}] \

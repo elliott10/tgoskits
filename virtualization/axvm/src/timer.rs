@@ -303,7 +303,7 @@ impl VcpuTimeSlice {
             Box::new(|_| {
                 trace!("vCPU time slice expired");
             }),
-            );
+        );
         Self { deadline_ns, token }
     }
 

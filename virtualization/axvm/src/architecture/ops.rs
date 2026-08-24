@@ -170,7 +170,6 @@ pub(crate) trait ArchOps {
         }
 
         let run_result = vcpu.with_current_cpu_set(|| -> AxVmResult<_> {
-
             // Bound this vCPU's continuous run time so that multiple vCPUs can
             // time-share one physical CPU. Arming the slice registers a
             // host-timer deadline that forces a running guest to VM-exit once
@@ -192,7 +191,7 @@ pub(crate) trait ArchOps {
                         if time_slice.expired() {
                             debug!(
                                 "VM[{vm_id}] VCpu[{vcpu_id}] time slice expired, yielding to host"
-                                );
+                            );
                             break Ok(BoundVcpuExit::Complete(VcpuRunAction {
                                 waits_for_event: false,
                                 stop_reason: None,
